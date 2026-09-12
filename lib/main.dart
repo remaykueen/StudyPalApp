@@ -1,8 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'lorem_ipsum_screen.dart';
 
 void main() {
   runApp(const StudyPalApp());
 }
+
+// ============================================================
+// GO ROUTER
+// ============================================================
+
+final GoRouter studyRouter = GoRouter(
+  initialLocation: '/',
+  routes: [
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const StudyHomeScreen(),
+    ),
+    GoRoute(
+      path: '/exams',
+      builder: (context, state) => const ExamsScreen(),
+    ),
+    GoRoute(
+      path: '/teachers',
+      builder: (context, state) => const TeachersScreen(),
+    ),
+    GoRoute(
+  path: '/lorem',
+  builder: (context, state) => const LoremIpsumScreen(),
+),
+  ],
+);
 
 // ============================================================
 // APP
@@ -16,208 +44,9 @@ class StudyPalApp extends StatelessWidget {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'StudyPal',
-      routerDelegate: studyRouter,
-      routeInformationParser: StudyRouteInformationParser(),
+      routerConfig: studyRouter,
     );
   }
-}
-
-// ============================================================
-// ROUTER
-// ============================================================
-
-final StudyRouterDelegate studyRouter = StudyRouterDelegate();
-
-class StudyRouteInformationParser
-    extends RouteInformationParser<StudyPage> {
-  @override
-  Future<StudyPage> parseRouteInformation(
-    RouteInformation routeInformation,
-  ) async {
-    final uri = routeInformation.uri;
-
-    if (uri.path == '/exams') {
-      return const StudyPage.exams();
-    }
-
-    if (uri.path == '/teachers') {
-      return const StudyPage.teachers();
-    }
-
-    return const StudyPage.home();
-  }
-
-  @override
-  RouteInformation restoreRouteInformation(
-    StudyPage configuration,
-  ) {
-    if (configuration.showTeachers) {
-      return RouteInformation(
-        uri: Uri.parse('/teachers'),
-      );
-    }
-
-    if (configuration.showExams) {
-      return RouteInformation(
-        uri: Uri.parse('/exams'),
-      );
-    }
-
-    return RouteInformation(
-      uri: Uri.parse('/'),
-    );
-  }
-}
-
-// ============================================================
-// ROUTER DELEGATE - NAVIGATOR 2.0
-// ============================================================
-
-class StudyRouterDelegate extends RouterDelegate<StudyPage>
-    with ChangeNotifier, PopNavigatorRouterDelegateMixin<StudyPage> {
-  StudyRouterDelegate()
-      : navigatorKey = GlobalKey<NavigatorState>();
-
-  @override
-  final GlobalKey<NavigatorState> navigatorKey;
-
-  bool showExams = false;
-  bool showTeachers = false;
-
-  // ----------------------------
-  // GO TO EXAMS
-  // ----------------------------
-
-  void goToExams() {
-    showExams = true;
-    showTeachers = false;
-    notifyListeners();
-  }
-
-  // ----------------------------
-  // GO TO TEACHERS
-  // ----------------------------
-
-  void goToTeachers() {
-    showExams = true;
-    showTeachers = true;
-    notifyListeners();
-  }
-
-  // ----------------------------
-  // GO HOME
-  // ----------------------------
-
-  void goHome() {
-    showExams = false;
-    showTeachers = false;
-    notifyListeners();
-  }
-
-  // ----------------------------
-  // GO BACK TO EXAMS
-  // ----------------------------
-
-  void goBackToExams() {
-    showTeachers = false;
-    showExams = true;
-    notifyListeners();
-  }
-
-  // ----------------------------
-  // CURRENT ROUTE
-  // ----------------------------
-
-  @override
-  StudyPage? get currentConfiguration {
-    if (showTeachers) {
-      return const StudyPage.teachers();
-    }
-
-    if (showExams) {
-      return const StudyPage.exams();
-    }
-
-    return const StudyPage.home();
-  }
-
-  // ----------------------------
-  // NAVIGATOR
-  // ----------------------------
-
-  @override
-  Widget build(BuildContext context) {
-    return Navigator(
-      key: navigatorKey,
-      pages: [
-        // SCREEN 1
-        const MaterialPage(
-          key: ValueKey('HomePage'),
-          child: StudyHomeScreen(),
-        ),
-
-        // SCREEN 2
-        if (showExams)
-          MaterialPage(
-            key: const ValueKey('ExamsPage'),
-            child: ExamsScreen(
-              onBack: goHome,
-              onTeachers: goToTeachers,
-            ),
-          ),
-
-        // SCREEN 3
-        if (showTeachers)
-          MaterialPage(
-            key: const ValueKey('TeachersPage'),
-            child: TeachersScreen(
-              onBack: goBackToExams,
-            ),
-          ),
-      ],
-      onDidRemovePage: (page) {
-        if (showTeachers) {
-          goBackToExams();
-        } else if (showExams) {
-          goHome();
-        }
-      },
-    );
-  }
-
-  // ----------------------------
-  // URL ROUTING
-  // ----------------------------
-
-  @override
-  Future<void> setNewRoutePath(
-    StudyPage configuration,
-  ) async {
-    showExams = configuration.showExams;
-    showTeachers = configuration.showTeachers;
-    notifyListeners();
-  }
-}
-
-// ============================================================
-// ROUTE CONFIGURATION
-// ============================================================
-
-class StudyPage {
-  final bool showExams;
-  final bool showTeachers;
-
-  const StudyPage.home()
-      : showExams = false,
-        showTeachers = false;
-
-  const StudyPage.exams()
-      : showExams = true,
-        showTeachers = false;
-
-  const StudyPage.teachers()
-      : showExams = true,
-        showTeachers = true;
 }
 
 // ============================================================
@@ -295,15 +124,15 @@ class StudyHomeScreen extends StatelessWidget {
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: studyRouter.goToExams,
+                      onPressed: () {
+                        context.go('/exams');
+                      },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            const Color(0xFF737AA8),
+                        backgroundColor: const Color(0xFF737AA8),
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(25),
+                          borderRadius: BorderRadius.circular(25),
                         ),
                       ),
                       child: const Text(
@@ -315,6 +144,12 @@ class StudyHomeScreen extends StatelessWidget {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 16),
+
+                  ElevatedButton(
+                  onPressed: () => context.go('/lorem'),
+                  child: const Text('Lorem Ipsum API'),
+                  ),  
                 ],
               ),
             ),
@@ -322,7 +157,7 @@ class StudyHomeScreen extends StatelessWidget {
         ),
       ),
     );
-  }
+  }          
 }
 
 // ============================================================
@@ -330,14 +165,7 @@ class StudyHomeScreen extends StatelessWidget {
 // ============================================================
 
 class ExamsScreen extends StatelessWidget {
-  final VoidCallback onBack;
-  final VoidCallback onTeachers;
-
-  const ExamsScreen({
-    super.key,
-    required this.onBack,
-    required this.onTeachers,
-  });
+  const ExamsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -352,7 +180,9 @@ class ExamsScreen extends StatelessWidget {
               Row(
                 children: [
                   IconButton(
-                    onPressed: onBack,
+                    onPressed: () {
+                      context.go('/');
+                    },
                     icon: const Icon(
                       Icons.arrow_back,
                       color: Colors.white,
@@ -386,8 +216,7 @@ class ExamsScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         'Upcoming Exams',
@@ -425,21 +254,21 @@ class ExamsScreen extends StatelessWidget {
                         width: double.infinity,
                         height: 52,
                         child: ElevatedButton.icon(
-                          onPressed: onTeachers,
+                          onPressed: () {
+                            context.go('/teachers');
+                          },
                           icon: const Icon(
                             Icons.people_outline,
                           ),
                           label: const Text(
                             'View Teachers',
                           ),
-                          style:
-                              ElevatedButton.styleFrom(
+                          style: ElevatedButton.styleFrom(
                             backgroundColor:
                                 const Color(0xFF737AA8),
                             foregroundColor: Colors.white,
                             elevation: 0,
-                            shape:
-                                RoundedRectangleBorder(
+                            shape: RoundedRectangleBorder(
                               borderRadius:
                                   BorderRadius.circular(25),
                             ),
@@ -464,15 +293,13 @@ class ExamsScreen extends StatelessWidget {
                               ),
                             );
                           },
-                          style:
-                              OutlinedButton.styleFrom(
+                          style: OutlinedButton.styleFrom(
                             foregroundColor:
                                 const Color(0xFF737AA8),
                             side: const BorderSide(
                               color: Color(0xFF737AA8),
                             ),
-                            shape:
-                                RoundedRectangleBorder(
+                            shape: RoundedRectangleBorder(
                               borderRadius:
                                   BorderRadius.circular(25),
                             ),
@@ -523,7 +350,7 @@ class ExamCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
@@ -537,9 +364,8 @@ class ExamCard extends StatelessWidget {
                 height: 75,
                 width: 75,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.18),
-                  borderRadius:
-                      BorderRadius.circular(12),
+                  color: color.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   icon,
@@ -595,8 +421,7 @@ class ExamCard extends StatelessWidget {
             height: 40,
             child: OutlinedButton(
               onPressed: () {
-                ScaffoldMessenger.of(context)
-                    .showSnackBar(
+                ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
                       'Selected $subject',
@@ -625,12 +450,7 @@ class ExamCard extends StatelessWidget {
 // ============================================================
 
 class TeachersScreen extends StatelessWidget {
-  final VoidCallback onBack;
-
-  const TeachersScreen({
-    super.key,
-    required this.onBack,
-  });
+  const TeachersScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -645,7 +465,9 @@ class TeachersScreen extends StatelessWidget {
               Row(
                 children: [
                   IconButton(
-                    onPressed: onBack,
+                    onPressed: () {
+                      context.go('/exams');
+                    },
                     icon: const Icon(
                       Icons.arrow_back,
                       color: Colors.white,
@@ -749,7 +571,7 @@ class TeacherCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
